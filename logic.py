@@ -1,8 +1,10 @@
 from databaseclass import Database
+from newutils import check_date, check_request, chek_type_product, get_float_value, get_int_input
+
 db = Database('Projectwarehouse.sqlite3')
-from newutils import *
 
 current_warehouse = None
+NEEDS_WAREHOUSE = {3, 4, 5, 6, 7}  # действия, для которых нужен выбранный склад
 
 def main_menu():
     global current_warehouse
@@ -20,7 +22,10 @@ def main_menu():
     if current_warehouse:
         data = db.list_of_products(current_warehouse, 'name')
         print(*data, sep ='\n')
-    request = check_request()
+    request = int(check_request())
+    if request in NEEDS_WAREHOUSE and current_warehouse is None:
+        print('Сначала создайте или выберите склад (пункты 1 и 2)')
+        return
     match request:
         case 1:
             name = input('Введите название склада: ').strip()
@@ -47,22 +52,30 @@ def main_menu():
             date = check_date("Какой срок годности формат(гггг-мм-дд): ")
             db.add_product(name_of_product, amount, price, type, date, current_warehouse)    
         case 4:
-            id = get_float_value('Введите id продукта: ')
+            id = get_int_input('Введите id продукта: ')
             amount = get_float_value('Введите количество, которое хотите купить: ')
-            db.delete_product(amount,id)
-        case 5:  
-            data = db.list_of_products(current_warehouse, 'price')
-            print(*data)
+            if not db.delete_product(amount, id):
+                print('Нет такого товара или его недостаточно на складе')
+        case 5:
+            # По общей стоимости партии (цена × количество), как в меню
+            data = db.list_of_products(current_warehouse, 'total')
+            print(*data, sep='\n')
         case 6:
-            info_id = get_float_value('Введите id для получения информации о продукте: ')
+            info_id = get_int_input('Введите id для получения информации о продукте: ')
             info = db.get_info_product(info_id)
-            print(*info)
+            print(*info) if info else print('Товар не найден')
         case 7:
-            prod_id = get_float_value('Введите id продукта: ')
-            check_guarantee = db.check_date_of_product(prod_id)
-            print(check_guarantee, 'дней')
+            prod_id = get_int_input('Введите id продукта: ')
+            days_left = db.check_date_of_product(prod_id)
+            print(f'{days_left} дней' if days_left is not None else 'Товар не найден')
         case 8:
             name = input('Введите названия склад, который хотите удалить: ')
-            db.delete_warehouse(name)
+            deleted_id = db.current_warehouse(name)
+            if db.delete_warehouse(name):
+                if deleted_id == current_warehouse:
+                    current_warehouse = None  # удалили выбранный склад
+                print('Склад удалён')
+            else:
+                print('Склад не найден')
         case 9:
             exit()

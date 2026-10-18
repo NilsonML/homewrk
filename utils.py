@@ -23,7 +23,7 @@ def get_strptime_value(mes):
 def get_product_name(mes):
     name_of_pr = input(mes)
     if not any(char.isalpha() for char in name_of_pr):
-        get_product_name(mes)
+        return get_product_name(mes)  # без return возвращалось первое (неверное) имя
     return name_of_pr
 
 def check_of_product():
@@ -127,8 +127,7 @@ def create_new_warh():
     global current_warehouse
     name = input('Введите название склада: ')
     if not any(char.isalpha() for char in name):
-        create_new_warh()
-        return
+        return create_new_warh()  # без return вызывающий код получал None
     initial_data = []
     new_warehouse = Warehouse(name, initial_data)
     warehouses.append(new_warehouse)
@@ -224,7 +223,7 @@ def check_date():
                 difr = date - current_datetime
                 print(f"осталось {difr.days} дней")
                 return
-        answer = ("Такого товар нет, хотите заказать или выйти?") 
+        answer = input("Такого товара нет, хотите заказать или выйти? ").strip().lower()
         if answer == "заказать":
             new_product()
             check_date()
@@ -290,8 +289,14 @@ class Product():
             self.quant -= quant
             return self
 
+    @property
+    def total(self):
+        """Общая стоимость партии: цена × количество."""
+        return self.price * self.quant
+
     def __lt__(self, other):
-        return self.price < other.price
+        # По заданию сортировка — по ОБЩЕЙ стоимости, а не по цене за единицу
+        return self.total < other.total
     
     def __repr__(self):
         return f'{self.name} ({self.quant}) ({self.price})'

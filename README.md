@@ -1,58 +1,31 @@
-# Давай тогда заданием будет большой проект
-## Задача: написать программу управления складом
-Существуют склады(warehouse), на которых хранятся различные товары(product)  
-Товары могут быть двух типов - продукты(food), непродовольственные товары товары(equipment)  
+# Warehouse Manager
 
+Console app for managing warehouses and goods, built as a learning project in two iterations:
 
-## Свойства:
-### Склад:
-- Название
-- Список товаров на складе(можно в формате списка)
+1. **OOP version** (`main.py`, `utils.py`): classes `Warehouse`, `Product`, `Food`, `Equipment` with dunder methods (`__getitem__`, `__setitem__`, `__contains__`, `__iadd__`, comparison operators for sorting). The original assignment is in [docs/TASK.md](docs/TASK.md).
+2. **SQLite version** (`main_db.py`, `logic.py`, `databaseclass.py`): the same domain with persistent storage.
 
-### Товар:
-- Название
-- Цена
-- Вес единицы
-- Количество на складе
+**Stack:** Python · sqlite3 · pytest
 
+## Features (SQLite version)
 
-### Непродовольственные товары:
-То же, что и у просто товара плюс
-- Длительность гарантии
+- Create, select and delete warehouses (deleting a warehouse removes its goods)
+- Add goods: name, quantity, price, type (food / non-food), expiry or warranty date; restocking an existing item increases its quantity
+- Sell N units with a check that enough stock is available
+- List goods sorted by name, price or **total value** (price × quantity)
+- Look up an item by id; days left until expiry / end of warranty
 
+## Run
 
-### Продукты:
-То же, что и у просто товара плюс
-- Срок годности
+```bash
+python main_db.py      # SQLite version, data is stored in Projectwarehouse.sqlite3
+python main.py         # OOP version (in-memory)
+pytest                 # tests for the database layer
+```
 
+## Design notes
 
-## Возможности:
-### Склад:
-- Привезти товар на склад(можно просто, можно через dunder)
-- Выкупить n единиц товара со склада(можно просто, можно через dunder)
-- Вывод списка товаров, отсортированного по цене товара
-- Проверка наличия товара на складе
-- Должны быть реализоваты dunder методы getitem, setitem, contains для создания двух предыдущих методов
-
-
-### Товар:
-- Dunder методы сравнения для выполнения сортировки по общей стоимости
-- Dunder методы add и iadd для добавления товаров(если на склад привезли новую партию товара)
-- Dunder метод bool для проверки наличия товара на складе(колво больше 0)
-
-
-### Непродовольственные товары:
-То же, что и у просто товара
-
-
-### Продукты:
-То же, что и у просто товара плюс
-- Проверка, не прошел ли срок годности
-
-## В utils.py реализовать классы
-## В main.py реализовать программу управления складом
-
-### Каркас программы управления складом находится в файле main.py
-
-
-## Ну и все это сделать с гитом, регулярными коммитами, по всем правилам)
+- All SQL values go through query parameters (`?`), never string formatting, so SQL injection is impossible.
+- `ORDER BY` cannot take a parameter (it would sort by a constant), so the sort column is chosen from a whitelist.
+- Dates are stored as ISO strings `YYYY-MM-DD`.
+- Tests use an in-memory database (`:memory:`): fast and leave no files behind.
